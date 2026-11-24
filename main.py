@@ -16,6 +16,15 @@ def main():
         print("read-back mismatch", file=sys.stderr)
         sys.exit(1)
     raw = target.read_bytes()
+    # Explicit byte-level read-back verification: the bytes on disk must
+    # decode back to exactly BIO and match its UTF-8 encoding byte for byte.
+    # Raise SystemExit directly so a mismatch always fails the run with a
+    # non-zero status, even under optimized interpreter flags.
+    expected_raw = BIO.encode("utf-8")
+    if raw != expected_raw or raw.decode("utf-8") != BIO:
+        raise SystemExit(
+            "read-back verification failed: entry.txt bytes do not match BIO"
+        )
     if len(back) != EXPECTED_CHAR_LEN or len(raw) != EXPECTED_BYTE_LEN:
         print(
             f"length mismatch: chars={len(back)} (expected {EXPECTED_CHAR_LEN}), "
